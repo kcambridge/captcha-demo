@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block headScripts %}
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+{% endblock %}
+
+{% block content %}
+	<div align="center" id="captcha-container">
+		<h3>Select all images that contain pies!</h3>
+		<div id="img-container">
+		</div>
+		<br/>
+		<br/>
+		<button type="button" name="captcha-submit" id="captcha-submit">Submit</button>
+	</div>
+{% endblock %}
+
+{% block footScripts %}
+<script type="text/javascript">
+	var selectedImages = [];
+	$(document).ready(function(){
+		$.ajax('/captcha/images', 
+		{
+			dataType: 'json',
+			success: function (data,status,xhr) {
+				var imgTemp1 ='<img src="';
+				var imgTemp2 = '" width="150px" height="150px" id="';
+				var imgTemp3 = '" class="captcha-img" name="';
+				var imgTemp4 = '">';
+				var images = '';
+				if(data.success = true){
+					for(var i of data.data){
+						selectedImages.push(i);
+						images += imgTemp1 +i.url+imgTemp2+i.id+imgTemp3+i.id+imgTemp4;
+					}
+					$('#img-container').html(images);	
+				}
+				else{
+					$('#img-container').html("<h4>Something went wrong. Please refresh the page and try again</h4>");	
+				}
+				
+			},
+			error: function (jqXhr, textStatus, errorMessage) {
+				alert(errorMessage);
+			}
+		});
+	});
+	$("#captcha-submit").click(function(){
+		var jsonData = JSON.stringify(selectedImages)
+		$.ajax('/captcha/validate/', {
+			type: 'POST',
+			data: jsonData ,
+			contentType: "application/json; charset=utf-8",
+        	dataType: "json",
+			success: function (data, status, xhr) {
+				if(data.success){
+					alert('Welcome human!')
+				}
+				else{
+					alert('You shall not pass robot scum!!!');
+				}
+			},
+			error: function (jqXhr, textStatus, errorMessage) {
+				alert(errorMessage);
+			}
+		});
+	});
+	$(document).on("click", '.captcha-img', function(event) { 
+		var id = $(this).attr('id');
+		for(var img of selectedImages){
+			if(img.id == id){
+				if(img.selected){
+					img.selected = false;
+					$(this).css('border', "none");
+				}
+				else{
+					img.selected = true;
+					$(this).css('border', "solid 2px blue");
+				}
+				break;
+			}
+		}
+	});	
+</script>
+{% endblock %}
